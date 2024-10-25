@@ -64,3 +64,15 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+## Tests!
+
+1. Write deploy scripts
+   1. Note, these will not work on zkSync
+2. Write tests
+   1. Local chain
+   2. Forked testnet
+   3. Forked mainnet
+
+VRF Supported Networks
+https://docs.chain.link/vrf/v2-5/supported-networks
