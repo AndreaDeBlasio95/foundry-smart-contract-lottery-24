@@ -76,3 +76,33 @@ $ cast --help
 
 VRF Supported Networks
 https://docs.chain.link/vrf/v2-5/supported-networks
+
+forge test --match-test <testFunctionName>
+
+for events we need to use
+
+```
+function expectEmit(
+bool checkTopic1,
+bool checkTopic2,
+bool checkTopic3,
+bool checkData
+) external;
+```
+
+Set the block.timestamp to 100
+vm.warp(100);
+
+Set the block.number to 100
+vm.roll(100);
+
+Transaction HEX
+cast sig "methodNameHere()"
+output: 0x....
+
+source .env
+cast wallet import account-name --interactive
+
+forge coverage
+forge coverage --report debug
+forge coverage --report debug > coverage.txt
