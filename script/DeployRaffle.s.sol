@@ -1,48 +1,43 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.19;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
-import {Raffle} from "src/Raffle.sol";
-import {HelperConfig} from "script/HelperConfig.s.sol";
-import {CreateSubscription, FundSubscription, AddConsumer} from "script/Interactions.s.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
+import {Raffle} from "../src/Raffle.sol";
+import {AddConsumer, CreateSubscription, FundSubscription} from "./Interactions.s.sol";
 
 contract DeployRaffle is Script {
-    function run() public {
-        deployContract();
-    }
-
-    function deployContract() public returns (Raffle, HelperConfig) {
-        HelperConfig helperConfig = new HelperConfig();
-        // local -> deploy mocks, get local config
-        // sepolia -> get sepolia config
+    function run() external returns (Raffle, HelperConfig) {
+        HelperConfig helperConfig = new HelperConfig(); // This comes with our mocks!
+        AddConsumer addConsumer = new AddConsumer();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
         if (config.subscriptionId == 0) {
-            // Create subscription
             CreateSubscription createSubscription = new CreateSubscription();
-            // Savinng the subscription id and the vrfCoordinator address in the HelperConfig
-            (config.subscriptionId, config.vrfCoordinator) =
-                createSubscription.createSubscription(config.vrfCoordinator);
+            (config.subscriptionId, config.vrfCoordinatorV2_5) =
+                createSubscription.createSubscription(config.vrfCoordinatorV2_5, config.account);
 
-            // fund subscription
             FundSubscription fundSubscription = new FundSubscription();
-            fundSubscription.fundSubscription(config.vrfCoordinator, config.subscriptionId, config.link);
+            fundSubscription.fundSubscription(
+                config.vrfCoordinatorV2_5, config.subscriptionId, config.link, config.account
+            );
+
+            helperConfig.setConfig(block.chainid, config);
         }
 
-        vm.startBroadcast();
+        vm.startBroadcast(config.account);
         Raffle raffle = new Raffle(
-            config.entranceFee,
-            config.interval,
-            config.vrfCoordinator,
-            config.gasLane,
             config.subscriptionId,
-            config.callbackGasLimit
+            config.gasLane,
+            config.automationUpdateInterval,
+            config.raffleEntranceFee,
+            config.callbackGasLimit,
+            config.vrfCoordinatorV2_5
         );
         vm.stopBroadcast();
 
-        AddConsumer addConsumer = new AddConsumer();
-        addConsumer.addConsumer(address(raffle), config.vrfCoordinator, config.subscriptionId);
-
+        // We already have a broadcast in here
+        addConsumer.addConsumer(address(raffle), config.vrfCoordinatorV2_5, config.subscriptionId, config.account);
         return (raffle, helperConfig);
     }
 }
